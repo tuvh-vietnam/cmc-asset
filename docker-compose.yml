@@ -1,0 +1,64 @@
+version: '2'
+
+services:
+  eureka-server:
+    build: ./eureka-server
+    image: asset-microservices/eureka-server
+    container_name: eureka-server    
+    ports:
+    - 8761:8761
+
+  asset-gateway:
+    build: ./asset-gateway
+    image: asset-microservices/asset-gateway
+    container_name: asset-gateway
+    depends_on:
+    - eureka-server    
+    ports:
+    - 8081:8081
+
+  assets-service:
+    build: ./assets-service
+    image: asset-microservices/assets-service
+    container_name: assets-service
+    depends_on:
+    - eureka-server
+    - asset-mysql    
+    ports:
+    - 8082:8082
+    environment:
+      SPRING_DATASOURCE_URL: jdbc:mysql://asset-mysql:3306/cmc-asset
+      SPRING_DATASOURCE_USERNAME: root
+      SPRING_DATASOURCE_PASSWORD: root
+
+  users-service:
+    build: ./users-service
+    image: asset-microservices/users-service
+    container_name: users-service
+    depends_on:
+    - eureka-server
+    - asset-mysql    
+    ports:
+    - 8083:8083
+    environment:
+      SPRING_DATASOURCE_URL: jdbc:mysql://asset-mysql:3306/cmc-asset
+      SPRING_DATASOURCE_USERNAME: root
+      SPRING_DATASOURCE_PASSWORD: root
+
+  asset-mysql:
+    restart: "no"
+    restart: always
+    restart: on-failure
+    restart: unless-stopped
+    image: mysql:5.7
+    container_name: asset-mysql
+    ports:
+      - 3306:3306
+    environment:
+      - MYSQL_ROOT_PASSWORD=root
+      - MYSQL_USER=root
+      - MYSQL_PASSWORD=root
+      - MYSQL_DATABASE=cmc-asset
+    volumes:
+      - "./docker/mysql:/etc/mysql/conf.d"
+  
